@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"os"
 	"path/filepath"
+	"reflect"
 	"testing"
 )
 
@@ -75,8 +76,8 @@ func TestDefaultConfig(t *testing.T) {
 	if codex.Command != "codex" {
 		t.Errorf("codex.Command = %q; want %q", codex.Command, "codex")
 	}
-	if len(codex.Args) != 1 || codex.Args[0] != "--full-auto" {
-		t.Errorf("codex.Args = %v; want [--full-auto]", codex.Args)
+	if !reflect.DeepEqual(codex.Args, defaultCodexArgs) {
+		t.Errorf("codex.Args = %v; want %v", codex.Args, defaultCodexArgs)
 	}
 
 	if cfg.UI.Theme != "catppuccin-mocha" {
@@ -250,6 +251,38 @@ func TestLoad_InvalidJSON(t *testing.T) {
 	_, err := Load(configPath)
 	if err == nil {
 		t.Error("Load() should return error for invalid JSON")
+	}
+}
+
+func TestLoad_NormalizesLegacyCodexFullAutoArg(t *testing.T) {
+	tmpDir := t.TempDir()
+	configPath := filepath.Join(tmpDir, "config.json")
+
+	customConfig := map[string]interface{}{
+		"agents": map[string]interface{}{
+			"codex": map[string]interface{}{
+				"command": "codex",
+				"args":    []string{"--full-auto", "--model", "gpt-5.4"},
+			},
+		},
+	}
+
+	data, err := json.Marshal(customConfig)
+	if err != nil {
+		t.Fatalf("failed to marshal test config: %v", err)
+	}
+	if err := os.WriteFile(configPath, data, 0644); err != nil {
+		t.Fatalf("failed to write test config: %v", err)
+	}
+
+	cfg, err := Load(configPath)
+	if err != nil {
+		t.Fatalf("Load() error: %v", err)
+	}
+
+	want := []string{"--model", "gpt-5.4", "--ask-for-approval", "never", "--sandbox", "workspace-write"}
+	if !reflect.DeepEqual(cfg.Agents["codex"].Args, want) {
+		t.Errorf("codex.Args = %v; want %v", cfg.Agents["codex"].Args, want)
 	}
 }
 

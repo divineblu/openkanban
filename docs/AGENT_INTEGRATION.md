@@ -22,7 +22,7 @@ Agents with native support and session continuation.
 | OpenCode | `opencode` | `--session` flag | Native session lookup |
 | Claude Code | `claude` | `--continue` flag | Continues last session |
 | Gemini CLI | `gemini` | `--resume` flag | Auto-approve with `--yolo` |
-| Codex CLI | `codex` | `resume --last` | Auto-approve with `--full-auto` |
+| Codex CLI | `codex` | `resume --last` | Auto-approve with `--ask-for-approval never --sandbox workspace-write` |
 | Aider | `aider` | N/A | Use `--yes` flag |
 
 ### Tier 2: Generic Support
@@ -372,7 +372,7 @@ case agentStatusMsg:
     },
     "codex": {
       "command": "codex",
-      "args": ["--full-auto"],
+      "args": ["--ask-for-approval", "never", "--sandbox", "workspace-write"],
       "init_prompt": "Custom prompt for Codex..."
     },
     "aider": {

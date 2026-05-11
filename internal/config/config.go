@@ -7,6 +7,7 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"strings"
 )
 
 const defaultGlobalPrompt = `You have been spawned by OpenKanban to work on a ticket.
@@ -141,6 +142,8 @@ Begin by analyzing the ticket requirements and proposing your approach.`
 // The first available agent in this list becomes the default.
 var AgentPriority = []string{"opencode", "claude", "gemini", "codex", "aider"}
 
+var defaultCodexArgs = []string{"--ask-for-approval", "never", "--sandbox", "workspace-write"}
+
 // DetectAvailableAgent returns the first agent from the priority list
 // whose command is available in PATH. Falls back to the first priority
 // agent if none are found (user may install later).
@@ -253,7 +256,7 @@ func defaultAgents() map[string]AgentConfig {
 		},
 		"codex": {
 			Command:    "codex",
-			Args:       []string{"--full-auto"},
+			Args:       append([]string(nil), defaultCodexArgs...),
 			Env:        map[string]string{},
 			StatusFile: "",
 			InitPrompt: defaultCodexPrompt,
@@ -357,6 +360,7 @@ func Load(path string) (*Config, error) {
 	}
 
 	cfg.mergeAgentDefaults()
+	cfg.normalizeAgentConfigs()
 
 	return cfg, nil
 }
@@ -375,6 +379,64 @@ func (c *Config) mergeAgentDefaults() {
 			c.Agents[name] = userCfg
 		}
 	}
+}
+
+func (c *Config) normalizeAgentConfigs() {
+	for name, agentCfg := range c.Agents {
+		if name == "codex" || filepath.Base(agentCfg.Command) == "codex" {
+			agentCfg.Args = normalizeCodexArgs(agentCfg.Args)
+			c.Agents[name] = agentCfg
+		}
+	}
+}
+
+func normalizeCodexArgs(args []string) []string {
+	normalized := make([]string, 0, len(args)+len(defaultCodexArgs))
+	foundLegacyFullAuto := false
+
+	for _, arg := range args {
+		if arg == "--full-auto" {
+			foundLegacyFullAuto = true
+			continue
+		}
+		normalized = append(normalized, arg)
+	}
+
+	if !foundLegacyFullAuto {
+		return args
+	}
+
+	if !hasCodexApprovalArg(normalized) {
+		normalized = append(normalized, "--ask-for-approval", "never")
+	}
+	if !hasCodexSandboxArg(normalized) {
+		normalized = append(normalized, "--sandbox", "workspace-write")
+	}
+	return normalized
+}
+
+func hasCodexApprovalArg(args []string) bool {
+	for _, arg := range args {
+		if arg == "--dangerously-bypass-approvals-and-sandbox" ||
+			arg == "--ask-for-approval" ||
+			arg == "-a" ||
+			strings.HasPrefix(arg, "--ask-for-approval=") {
+			return true
+		}
+	}
+	return false
+}
+
+func hasCodexSandboxArg(args []string) bool {
+	for _, arg := range args {
+		if arg == "--dangerously-bypass-approvals-and-sandbox" ||
+			arg == "--sandbox" ||
+			arg == "-s" ||
+			strings.HasPrefix(arg, "--sandbox=") {
+			return true
+		}
+	}
+	return false
 }
 
 func (c *Config) GetEffectiveInitPrompt(agentType string) string {

@@ -32,7 +32,7 @@ OpenKanban configuration lives in `~/.config/openkanban/config.json`.
     },
     "codex": {
       "command": "codex",
-      "args": ["--full-auto"]
+      "args": ["--ask-for-approval", "never", "--sandbox", "workspace-write"]
     },
     "aider": {
       "command": "aider",
@@ -285,11 +285,13 @@ Tickets support labels and priority levels:
 
 **Labels**: Comma-separated tags (e.g., `bug, urgent, frontend`). Labels appear on ticket cards and can help organize work.
 
+**Clipboard images**: In the ticket form, `ctrl+v` pastes clipboard text into the description. If the clipboard contains an image, OpenKanban saves it under `~/.config/openkanban/attachments/` and inserts Markdown into the description.
+
 **Priority**: 1 (Critical) to 5 (Lowest). High-priority tickets (1-2) show a visual indicator on the card:
 - `!!` - Critical (priority 1)
 - `!` - High (priority 2)
 
-Set labels and priority when creating or editing a ticket (`n` or `e`).
+Set labels and priority when creating or editing a ticket (`a`/`n` or `e`).
 
 ## Keybindings
 
@@ -307,9 +309,10 @@ All keybindings are shown in-app with `?`. Custom keybindings coming soon.
 | `G` | Go to last ticket |
 | `space` | Move ticket to next column |
 | `-` | Move ticket to previous column |
-| `enter` | Attach to running agent |
-| `n` | Create new ticket |
+| `enter` | Edit selected ticket, or attach to running agent |
+| `a` / `n` | Create new ticket |
 | `e` | Edit ticket |
+| `ctrl+v` | Paste text or attach a clipboard image in the ticket description |
 | `s` | Spawn agent for ticket |
 | `S` | Stop agent |
 | `d` | Delete ticket |

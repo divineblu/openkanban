@@ -75,9 +75,10 @@ openkanban
 | `j/k` | Navigate tickets up/down |
 | `h/l` | Navigate between columns |
 | `space` | Move ticket to next column |
-| `n` | New ticket |
+| `a` / `n` | New ticket |
 | `s` | Spawn agent |
-| `enter` | Attach to agent |
+| `enter` | Edit ticket, or attach if an agent is running |
+| `ctrl+v` | Paste text or attach a clipboard image in the ticket description |
 | `?` | Full help |
 
 ## Configuration

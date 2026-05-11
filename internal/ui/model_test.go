@@ -1,9 +1,14 @@
 package ui
 
 import (
+	"os"
+	"path/filepath"
+	"strings"
 	"testing"
 	"time"
 
+	"github.com/charmbracelet/bubbles/textarea"
+	"github.com/charmbracelet/bubbles/textinput"
 	tea "github.com/charmbracelet/bubbletea"
 
 	"github.com/divineblu/openkanban/internal/board"
@@ -19,6 +24,7 @@ func newBoardTestModel(t *testing.T) (*Model, *project.Project) {
 
 	cfg := config.DefaultConfig()
 	cfg.UI.SidebarVisible = false
+	cfg.Defaults.AutoSpawnAgent = false
 	theme := cfg.GetTheme()
 
 	registry := &project.ProjectRegistry{Projects: make(map[string]*project.Project)}
@@ -29,21 +35,30 @@ func newBoardTestModel(t *testing.T) (*Model, *project.Project) {
 	store.AddProject(proj)
 
 	m := &Model{
-		config:           cfg,
-		theme:            theme,
-		colors:           newUIColors(theme),
-		globalStore:      store,
-		projectRegistry:  registry,
-		columns:          board.DefaultColumns(),
-		filterProjectIDs: make(map[string]bool),
-		worktreeMgrs:     make(map[string]*git.WorktreeManager),
-		mode:             ModeNormal,
-		width:            120,
-		height:           32,
-		hoverColumn:      -1,
-		hoverTicket:      -1,
-		panes:            make(map[board.TicketID]*terminal.Pane),
-		selectedProject:  proj,
+		config:             cfg,
+		theme:              theme,
+		colors:             newUIColors(theme),
+		titleInput:         textinput.New(),
+		descInput:          textarea.New(),
+		branchInput:        textinput.New(),
+		labelsInput:        textinput.New(),
+		projectInput:       textinput.New(),
+		settingsInput:      textinput.New(),
+		filterInput:        textinput.New(),
+		addProjectPath:     textinput.New(),
+		blockerFilterInput: textinput.New(),
+		globalStore:        store,
+		projectRegistry:    registry,
+		columns:            board.DefaultColumns(),
+		filterProjectIDs:   make(map[string]bool),
+		worktreeMgrs:       make(map[string]*git.WorktreeManager),
+		mode:               ModeNormal,
+		width:              120,
+		height:             32,
+		hoverColumn:        -1,
+		hoverTicket:        -1,
+		panes:              make(map[board.TicketID]*terminal.Pane),
+		selectedProject:    proj,
 	}
 	m.refreshColumnTickets()
 	return m, proj
@@ -69,6 +84,142 @@ func TestQuickMoveTicketMovesWithoutWorktreeSetup(t *testing.T) {
 	}
 	if m.activeColumn != 1 || m.activeTicket != 0 {
 		t.Fatalf("active selection = column %d ticket %d, want column 1 ticket 0", m.activeColumn, m.activeTicket)
+	}
+}
+
+func TestQuickMoveTicketAutoSpawnsWhenMovingToInProgress(t *testing.T) {
+	m, proj := newBoardTestModel(t)
+	m.config.Defaults.AutoSpawnAgent = true
+	m.config.Defaults.DefaultAgent = "codex"
+
+	ticket := board.NewTicket("Spawn codex", proj.ID)
+	ticket.AgentType = "codex"
+	if err := m.globalStore.Add(ticket); err != nil {
+		t.Fatalf("add ticket: %v", err)
+	}
+	m.refreshColumnTickets()
+
+	if _, cmd := m.quickMoveTicket(); cmd == nil {
+		t.Fatalf("quickMoveTicket returned nil command")
+	}
+
+	if ticket.Status != board.StatusInProgress {
+		t.Fatalf("ticket status = %q, want %q", ticket.Status, board.StatusInProgress)
+	}
+	if m.mode != ModeSpawning {
+		t.Fatalf("mode = %q, want %q", m.mode, ModeSpawning)
+	}
+	if m.spawningTicketID != ticket.ID {
+		t.Fatalf("spawningTicketID = %q, want %q", m.spawningTicketID, ticket.ID)
+	}
+	if m.spawningAgent != "codex" {
+		t.Fatalf("spawningAgent = %q, want codex", m.spawningAgent)
+	}
+}
+
+func TestNormalModeAddAliasOpensCreateTicket(t *testing.T) {
+	m, _ := newBoardTestModel(t)
+
+	if _, cmd := m.handleNormalMode(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'a'}}); cmd == nil {
+		t.Fatalf("handleNormalMode(a) returned nil command")
+	}
+
+	if m.mode != ModeCreateTicket {
+		t.Fatalf("mode = %q, want %q", m.mode, ModeCreateTicket)
+	}
+	if m.ticketFormField != formFieldTitle {
+		t.Fatalf("ticketFormField = %d, want title field", m.ticketFormField)
+	}
+}
+
+func TestEnterEditsTicketWhenNoAgentIsRunning(t *testing.T) {
+	m, proj := newBoardTestModel(t)
+	ticket := board.NewTicket("Edit me", proj.ID)
+	if err := m.globalStore.Add(ticket); err != nil {
+		t.Fatalf("add ticket: %v", err)
+	}
+	m.refreshColumnTickets()
+
+	m.handleNormalMode(tea.KeyMsg{Type: tea.KeyEnter})
+
+	if m.mode != ModeEditTicket {
+		t.Fatalf("mode = %q, want %q", m.mode, ModeEditTicket)
+	}
+	if m.editingTicketID != ticket.ID {
+		t.Fatalf("editingTicketID = %q, want %q", m.editingTicketID, ticket.ID)
+	}
+}
+
+func TestDoubleClickEditsTicket(t *testing.T) {
+	m, proj := newBoardTestModel(t)
+	ticket := board.NewTicket("Double click me", proj.ID)
+	if err := m.globalStore.Add(ticket); err != nil {
+		t.Fatalf("add ticket: %v", err)
+	}
+	m.refreshColumnTickets()
+
+	m.handleDoubleClick()
+
+	if m.mode != ModeEditTicket {
+		t.Fatalf("mode = %q, want %q", m.mode, ModeEditTicket)
+	}
+	if m.editingTicketID != ticket.ID {
+		t.Fatalf("editingTicketID = %q, want %q", m.editingTicketID, ticket.ID)
+	}
+}
+
+func TestDescriptionPasteMessageInsertsAttachmentMarkdown(t *testing.T) {
+	m, _ := newBoardTestModel(t)
+	m.mode = ModeCreateTicket
+	m.ticketFormField = formFieldTitle
+	m.descInput.SetValue("Existing notes")
+
+	if _, cmd := m.handleDescriptionPasteMsg(descriptionPasteMsg{markdown: "![attached image](.openkanban/attachments/image.png)"}); cmd != nil {
+		t.Fatalf("handleDescriptionPasteMsg returned unexpected command")
+	}
+
+	value := m.descInput.Value()
+	if !strings.Contains(value, "Existing notes") || !strings.Contains(value, "![attached image](.openkanban/attachments/image.png)") {
+		t.Fatalf("description value = %q, want existing text and attachment markdown", value)
+	}
+	if m.ticketFormField != formFieldDescription {
+		t.Fatalf("ticketFormField = %d, want description field", m.ticketFormField)
+	}
+}
+
+func TestPasteClipboardImageAttachmentSavesUnderConfigDir(t *testing.T) {
+	configDir := t.TempDir()
+	t.Setenv("OPENKANBAN_CONFIG_DIR", configDir)
+
+	oldWriter := writeClipboardImageFile
+	t.Cleanup(func() {
+		writeClipboardImageFile = oldWriter
+	})
+
+	var writtenPath string
+	writeClipboardImageFile = func(path string) error {
+		writtenPath = path
+		return os.WriteFile(path, []byte("png data"), 0644)
+	}
+
+	proj := project.NewProject("Attachment Project", t.TempDir())
+	markdown, err := pasteClipboardImageAttachment(proj, "Screenshot Bug")
+	if err != nil {
+		t.Fatalf("pasteClipboardImageAttachment error: %v", err)
+	}
+
+	wantDir := filepath.Join(configDir, "attachments", board.Slugify(proj.ID, 64))
+	if !strings.HasPrefix(writtenPath, wantDir+string(filepath.Separator)) {
+		t.Fatalf("writtenPath = %q, want under %q", writtenPath, wantDir)
+	}
+	if strings.Contains(writtenPath, proj.RepoPath) {
+		t.Fatalf("writtenPath = %q, should not be inside project repo %q", writtenPath, proj.RepoPath)
+	}
+	if _, err := os.Stat(writtenPath); err != nil {
+		t.Fatalf("expected attachment file to exist: %v", err)
+	}
+	if !strings.Contains(markdown, "![attached image](") || !strings.Contains(markdown, filepath.ToSlash(writtenPath)) {
+		t.Fatalf("markdown = %q, want attachment markdown with written path", markdown)
 	}
 }
 

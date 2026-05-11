@@ -631,6 +631,7 @@ func (m *Model) contextualHints(hintStyle lipgloss.Style, sep string) string {
 			action = "save"
 		}
 		return hintStyle.Render("Tab") + m.dimStyle().Render(" next") + sep +
+			hintStyle.Render("Ctrl+V") + m.dimStyle().Render(" paste") + sep +
 			hintStyle.Render("Ctrl+S") + m.dimStyle().Render(" "+action) + sep +
 			hintStyle.Render("Esc") + m.dimStyle().Render(" cancel")
 
@@ -655,20 +656,22 @@ func (m *Model) contextualHints(hintStyle lipgloss.Style, sep string) string {
 		if ticket != nil {
 			if _, hasPane := m.panes[ticket.ID]; hasPane {
 				return hintStyle.Render("Enter") + m.dimStyle().Render(" attach") + sep +
+					hintStyle.Render("e") + m.dimStyle().Render(" edit") + sep +
 					hintStyle.Render("S") + m.dimStyle().Render(" stop agent") + sep +
 					hintStyle.Render("Space") + m.dimStyle().Render(" move") + sep +
 					hintStyle.Render("?") + m.dimStyle().Render(" help")
 			}
 			if ticket.Status == board.StatusInProgress {
-				return hintStyle.Render("s") + m.dimStyle().Render(" spawn agent") + sep +
+				return hintStyle.Render("Enter") + m.dimStyle().Render(" edit") + sep +
+					hintStyle.Render("s") + m.dimStyle().Render(" spawn agent") + sep +
 					hintStyle.Render("Space") + m.dimStyle().Render(" move") + sep +
-					hintStyle.Render("e") + m.dimStyle().Render(" edit") + sep +
 					hintStyle.Render("?") + m.dimStyle().Render(" help")
 			}
 		}
 
 		return hintStyle.Render("h/l") + m.dimStyle().Render(" columns") + sep +
-			hintStyle.Render("n") + m.dimStyle().Render(" new") + sep +
+			hintStyle.Render("a/n") + m.dimStyle().Render(" new") + sep +
+			hintStyle.Render("Enter") + m.dimStyle().Render(" edit") + sep +
 			hintStyle.Render("Space") + m.dimStyle().Render(" move") + sep +
 			hintStyle.Render("drag") + m.dimStyle().Render(" move card") + sep +
 			hintStyle.Render("/") + m.dimStyle().Render(" search") + sep +
@@ -705,17 +708,17 @@ func (m *Model) renderHelp() string {
 		sep + "\n" +
 		sectionStyle.Render("  🧭 Navigation") + "                 " + sectionStyle.Render("📝 Actions") + "\n" +
 		sep + "\n" +
-		"  " + keyStyle.Render("h/l") + descStyle.Render("   Move between columns  ") + keyStyle.Render("n") + descStyle.Render("       New ticket") + "\n" +
-		"  " + keyStyle.Render("j/k") + descStyle.Render("   Move between tickets  ") + keyStyle.Render("e") + descStyle.Render("       Edit ticket") + "\n" +
+		"  " + keyStyle.Render("h/l") + descStyle.Render("   Move between columns  ") + keyStyle.Render("a/n") + descStyle.Render("     New ticket") + "\n" +
+		"  " + keyStyle.Render("j/k") + descStyle.Render("   Move between tickets  ") + keyStyle.Render("Enter") + descStyle.Render("   Edit/attach") + "\n" +
 		"  " + keyStyle.Render("g") + descStyle.Render("     Go to first ticket    ") + keyStyle.Render("d") + descStyle.Render("       Delete ticket") + "\n" +
 		"  " + keyStyle.Render("G") + descStyle.Render("     Go to last ticket     ") + keyStyle.Render("Space") + descStyle.Render("   Move forward") + "\n" +
-		"  " + keyStyle.Render(" ") + descStyle.Render("                            ") + keyStyle.Render("-") + descStyle.Render("       Move backward") + "\n\n" +
+		"  " + keyStyle.Render("e") + descStyle.Render("     Edit ticket           ") + keyStyle.Render("-") + descStyle.Render("       Move backward") + "\n\n" +
 		sep + "\n" +
 		sectionStyle.Render("  📂 Sidebar") + "                    " + sectionStyle.Render("🤖 Agent") + "\n" +
 		sep + "\n" +
 		"  " + keyStyle.Render("[") + descStyle.Render("     Toggle sidebar        ") + keyStyle.Render("s") + descStyle.Render("       Spawn agent") + "\n" +
 		"  " + keyStyle.Render("h") + descStyle.Render("     Enter sidebar         ") + keyStyle.Render("S") + descStyle.Render("       Stop agent") + "\n" +
-		"  " + keyStyle.Render("l") + descStyle.Render("     Exit sidebar          ") + keyStyle.Render("Enter") + descStyle.Render("   Attach to agent") + "\n" +
+		"  " + keyStyle.Render("l") + descStyle.Render("     Exit sidebar          ") + keyStyle.Render("Ctrl+V") + descStyle.Render("  Paste into form") + "\n" +
 		"  " + keyStyle.Render("j/k") + descStyle.Render("   Navigate projects     ") + keyStyle.Render("Ctrl+g") + descStyle.Render("  Exit agent view") + "\n\n" +
 		sep + "\n" +
 		sectionStyle.Render("  👁 View") + "\n" +
@@ -936,7 +939,7 @@ func (m *Model) renderTicketForm() string {
 
 	fieldStartLines[formFieldDescription] = currentLine
 	lines = append(lines, descFocus+descLabel.Render("Description"))
-	lines = append(lines, "  "+descriptionStyle.Render("Details, context, or acceptance criteria"))
+	lines = append(lines, "  "+descriptionStyle.Render("Details, acceptance criteria, or Ctrl+V image paste"))
 	descLines := strings.Split(m.descInput.View(), "\n")
 	for _, dl := range descLines {
 		lines = append(lines, "  "+dl)
@@ -1081,6 +1084,7 @@ func (m *Model) renderTicketForm() string {
 	content := titleStyle.Render("◈ "+formTitle) + "\n\n" + strings.Join(visibleLines, "\n")
 
 	footerHints := lipgloss.NewStyle().Foreground(m.colors.info).Render("[Tab]") + m.dimStyle().Render(" Next  ") +
+		lipgloss.NewStyle().Foreground(m.colors.info).Render("[Ctrl+V]") + m.dimStyle().Render(" Paste  ") +
 		lipgloss.NewStyle().Foreground(m.colors.success).Render("[Ctrl+S]") + m.dimStyle().Render(" "+actionText+"  ") +
 		lipgloss.NewStyle().Foreground(m.colors.muted).Render("[Esc]") + m.dimStyle().Render(" Cancel")
 	content += "\n\n  " + footerHints

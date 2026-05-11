@@ -485,6 +485,9 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			m.notify(fmt.Sprintf("Update %s available: %s", msg.LatestVersion, result.UpdateHint()))
 		}
 		return m, nil
+
+	case descriptionPasteMsg:
+		return m.handleDescriptionPasteMsg(msg)
 	}
 
 	return m, nil
@@ -589,12 +592,12 @@ func (m *Model) handleNormalMode(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 		}
 		m.ensureTicketVisible()
 
-	case "n":
+	case "n", "a":
 		return m.createNewTicket()
 	case "e":
 		return m.editTicket()
 	case "enter":
-		return m.attachToAgent()
+		return m.openSelectedTicket()
 	case "d":
 		return m.confirmDeleteTicket()
 	case " ":
@@ -961,6 +964,7 @@ func (m *Model) dropTicket() (tea.Model, tea.Cmd) {
 	}
 
 	ticket := tickets[m.dragSourceTicket]
+	previousStatus := ticket.Status
 	targetStatus := m.columns[m.dragTargetColumn].Status
 
 	if err := m.moveTicketToStatus(ticket, targetStatus); err != nil {
@@ -971,10 +975,14 @@ func (m *Model) dropTicket() (tea.Model, tea.Cmd) {
 	m.ensureColumnVisible()
 	m.ensureTicketVisible()
 
-	m.notify("Moved to " + string(targetStatus))
 	m.dragging = false
 	m.dragTargetColumn = 0
 
+	if m.shouldAutoSpawnAfterMove(ticket, previousStatus, targetStatus) {
+		return m.spawnAgent()
+	}
+
+	m.notify("Moved to " + string(targetStatus))
 	return m, nil
 }
 
@@ -1177,6 +1185,13 @@ func (m *Model) handleTicketForm(msg tea.KeyMsg, isEdit bool) (tea.Model, tea.Cm
 			m.showAddProjectForm = false
 		}
 		return m.prevFormField(isEdit), nil
+
+	case "ctrl+v":
+		m.ticketFormField = formFieldDescription
+		m.blurAllFormFields()
+		m.descInput.Focus()
+		m.notify("Reading clipboard...")
+		return m, m.pasteClipboardToDescription()
 
 	case "ctrl+s":
 		return m.saveTicketForm(isEdit)
@@ -1618,6 +1633,7 @@ func (m *Model) saveTicketForm(isEdit bool) (tea.Model, tea.Cmd) {
 	labels := m.parseLabels(m.labelsInput.Value())
 
 	blockedBy := m.collectSelectedBlockers()
+	var createdTicket *board.Ticket
 
 	if isEdit && m.editingTicketID != "" {
 		ticket, _ := m.globalStore.Get(m.editingTicketID)
@@ -1654,12 +1670,16 @@ func (m *Model) saveTicketForm(isEdit bool) (tea.Model, tea.Cmd) {
 		m.selectTicketByID(ticket.ID)
 		m.saveTicket(ticket)
 		m.notify("Created: " + title)
+		createdTicket = ticket
 	}
 
 	m.mode = ModeNormal
 	m.blurAllFormFields()
 	m.editingTicketID = ""
 	m.branchLocked = false
+	if createdTicket != nil && m.shouldAutoSpawnAfterMove(createdTicket, "", createdTicket.Status) {
+		return m.spawnAgent()
+	}
 	return m, nil
 }
 
@@ -2289,9 +2309,13 @@ func (m *Model) attachToAgent() (tea.Model, tea.Cmd) {
 }
 
 func (m *Model) handleDoubleClick() (tea.Model, tea.Cmd) {
+	return m.editTicket()
+}
+
+func (m *Model) openSelectedTicket() (tea.Model, tea.Cmd) {
 	ticket := m.selectedTicket()
 	if ticket == nil {
-		return m, nil
+		return m.createNewTicket()
 	}
 
 	pane, ok := m.panes[ticket.ID]
@@ -2299,7 +2323,7 @@ func (m *Model) handleDoubleClick() (tea.Model, tea.Cmd) {
 		return m.attachToAgent()
 	}
 
-	return m.spawnAgent()
+	return m.editTicket()
 }
 
 func (m *Model) confirmDeleteTicket() (tea.Model, tea.Cmd) {
@@ -2379,6 +2403,7 @@ func (m *Model) quickMoveTicket() (tea.Model, tea.Cmd) {
 		return m, nil
 	}
 
+	previousStatus := ticket.Status
 	nextStatus := m.nextStatus(ticket.Status)
 	if nextStatus == ticket.Status {
 		return m, nil
@@ -2388,6 +2413,11 @@ func (m *Model) quickMoveTicket() (tea.Model, tea.Cmd) {
 		m.notify("Move failed: " + err.Error())
 		return m, nil
 	}
+
+	if m.shouldAutoSpawnAfterMove(ticket, previousStatus, nextStatus) {
+		return m.spawnAgent()
+	}
+
 	m.notify("Moved to " + string(nextStatus))
 
 	return m, nil
@@ -2425,6 +2455,19 @@ func (m *Model) moveTicketToStatus(ticket *board.Ticket, status board.TicketStat
 	m.refreshColumnTickets()
 	m.selectTicketByID(ticket.ID)
 	return m.globalStore.Save(ticket)
+}
+
+func (m *Model) shouldAutoSpawnAfterMove(ticket *board.Ticket, previousStatus, nextStatus board.TicketStatus) bool {
+	if ticket == nil || previousStatus == nextStatus || nextStatus != board.StatusInProgress {
+		return false
+	}
+	if m.config == nil || !m.config.Defaults.AutoSpawnAgent {
+		return false
+	}
+	if _, exists := m.panes[ticket.ID]; exists {
+		return false
+	}
+	return true
 }
 
 func (m *Model) setupWorktree(ticket *board.Ticket) error {
