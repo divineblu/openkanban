@@ -42,7 +42,7 @@ type CheckResult struct {
 func (r CheckResult) UpdateHint() string {
 	switch r.InstallMethod {
 	case InstallHomebrew:
-		return "brew upgrade openkanban"
+		return "brew upgrade --cask openkanban"
 	case InstallGo:
 		return "go install github.com/divineblu/openkanban@latest"
 	default:
@@ -57,7 +57,7 @@ func DetectInstallMethod() InstallMethod {
 		return InstallUnknown
 	}
 
-	if strings.Contains(exe, "Cellar") || strings.Contains(exe, "linuxbrew") {
+	if strings.Contains(exe, "Cellar") || strings.Contains(exe, "Caskroom") || strings.Contains(exe, "linuxbrew") {
 		return InstallHomebrew
 	}
 

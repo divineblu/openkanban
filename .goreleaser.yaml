@@ -71,7 +71,7 @@ release:
 
     ```bash
     # Homebrew
-    brew install divineblu/tap/openkanban
+    brew install --cask divineblu/tap/openkanban
 
     # Go
     go install github.com/divineblu/openkanban@{{ .Tag }}

@@ -45,13 +45,13 @@ OpenKanban gives you a single view of all your work. Each ticket gets its own gi
 ### Homebrew (macOS/Linux)
 
 ```bash
-brew install divineblu/tap/openkanban
+brew install --cask divineblu/tap/openkanban
 ```
 
 To update:
 
 ```bash
-brew upgrade openkanban
+brew upgrade --cask openkanban
 ```
 
 ### Go
