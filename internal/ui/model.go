@@ -12,6 +12,7 @@ import (
 	"github.com/charmbracelet/bubbles/textarea"
 	"github.com/charmbracelet/bubbles/textinput"
 	tea "github.com/charmbracelet/bubbletea"
+	"github.com/charmbracelet/lipgloss"
 
 	"github.com/divineblu/openkanban/internal/agent"
 	"github.com/divineblu/openkanban/internal/board"
@@ -59,6 +60,14 @@ const (
 	formFieldBlockedBy   = 7
 	formFieldProject     = 8
 )
+
+type columnHitLayout struct {
+	index        int
+	x            int
+	width        int
+	renderWidth  int
+	ticketOffset int
+}
 
 type Model struct {
 	config *config.Config
@@ -759,14 +768,17 @@ func (m *Model) handleMouse(msg tea.MouseMsg) (tea.Model, tea.Cmd) {
 		}
 
 	case tea.MouseActionRelease:
+		col, ticket := m.hitTest(msg.X, msg.Y)
 		if m.dragging {
+			if col >= 0 {
+				m.dragTargetColumn = col
+			}
 			if m.dragTargetColumn != m.dragSourceColumn && m.dragTargetColumn >= 0 {
 				return m.dropTicket()
 			}
 			m.dragging = false
 			m.dragTargetColumn = 0
 		}
-		col, ticket := m.hitTest(msg.X, msg.Y)
 		m.hoverColumn = col
 		m.hoverTicket = ticket
 
@@ -783,7 +795,7 @@ func (m *Model) handleMouse(msg tea.MouseMsg) (tea.Model, tea.Cmd) {
 }
 
 func (m *Model) hitTestHeader(x, y int) bool {
-	if y > 2 {
+	if y >= m.headerHeight() {
 		return false
 	}
 
@@ -812,51 +824,97 @@ func (m *Model) hitTest(x, y int) (column, ticket int) {
 
 	if m.sidebarVisible {
 		x = x - m.sidebarWidth - 1
+		if x < 0 {
+			return -1, -1
+		}
 	}
 
-	headerHeight := 2
-	if y < headerHeight {
+	boardTop := m.headerHeight()
+	if y < boardTop {
 		return -1, -1
 	}
 
-	columnWidth := m.calcColumnWidth()
-	visibleCols := m.visibleColumnCount(columnWidth)
-	numVisible := visibleCols
-	if m.scrollOffset+visibleCols > len(m.columns) {
-		numVisible = len(m.columns) - m.scrollOffset
-	}
-
-	baseWidth, remainder := m.distributeWidth(numVisible)
-
-	hasLeftIndicator := m.scrollOffset > 0
-	startX := 0
-	if hasLeftIndicator {
-		startX = 2
-	}
-
-	for i := 0; i < numVisible; i++ {
-		colWidth := baseWidth + 3
-		if i < remainder {
-			colWidth++
+	relativeY := y - boardTop
+	for _, layout := range m.visibleColumnHitLayouts() {
+		if x >= layout.x && x < layout.x+layout.width {
+			ticketIdx := m.hitTestTicket(relativeY, layout)
+			return layout.index, ticketIdx
 		}
-
-		if x >= startX && x < startX+colWidth {
-			actualCol := m.scrollOffset + i
-			ticketIdx := m.hitTestTicket(y-headerHeight, actualCol)
-			return actualCol, ticketIdx
-		}
-		startX += colWidth
 	}
 
 	return -1, -1
 }
 
-func (m *Model) hitTestTicket(relativeY, column int) int {
-	if column < 0 || column >= len(m.columnTickets) {
+func (m *Model) visibleColumnHitLayouts() []columnHitLayout {
+	columnWidth := m.calcColumnWidth()
+	visibleCols := m.visibleColumnCount(columnWidth)
+
+	startCol := m.scrollOffset
+	endCol := min(startCol+visibleCols, len(m.columns))
+	numVisible := endCol - startCol
+	if numVisible <= 0 {
+		return nil
+	}
+
+	baseWidth, remainder := m.distributeWidth(numVisible)
+	x := 0
+	if startCol > 0 {
+		indicator := lipgloss.NewStyle().
+			Foreground(m.colors.muted).
+			Background(m.colors.surface).
+			Padding(0, 1).
+			Render(fmt.Sprintf("◀ %d", startCol))
+		x += lipgloss.Width(indicator)
+	}
+
+	layouts := make([]columnHitLayout, 0, numVisible)
+	for i := startCol; i < endCol; i++ {
+		colWidth := baseWidth
+		if i-startCol < remainder {
+			colWidth++
+		}
+
+		ticketOffset := 0
+		if i < len(m.columnOffsets) {
+			ticketOffset = m.columnOffsets[i]
+		}
+		var tickets []*board.Ticket
+		if i < len(m.columnTickets) {
+			tickets = m.columnTickets[i]
+		}
+
+		isLast := i == endCol-1
+		rendered := m.renderColumn(
+			m.columns[i],
+			tickets,
+			false,
+			false,
+			false,
+			colWidth,
+			isLast,
+			ticketOffset,
+		)
+		renderedWidth := lipgloss.Width(rendered)
+
+		layouts = append(layouts, columnHitLayout{
+			index:        i,
+			x:            x,
+			width:        renderedWidth,
+			renderWidth:  colWidth,
+			ticketOffset: ticketOffset,
+		})
+		x += renderedWidth
+	}
+
+	return layouts
+}
+
+func (m *Model) hitTestTicket(relativeY int, layout columnHitLayout) int {
+	if layout.index < 0 || layout.index >= len(m.columnTickets) {
 		return -1
 	}
 
-	tickets := m.columnTickets[column]
+	tickets := m.columnTickets[layout.index]
 	if len(tickets) == 0 {
 		return -1
 	}
@@ -866,17 +924,28 @@ func (m *Model) hitTestTicket(relativeY, column int) int {
 		return -1
 	}
 
-	offset := 0
-	if column < len(m.columnOffsets) {
-		offset = m.columnOffsets[column]
+	visibleCount := m.visibleTicketCount()
+	endIdx := min(layout.ticketOffset+visibleCount, len(tickets))
+	hasMoreAbove := layout.ticketOffset > 0
+	if hasMoreAbove {
+		if ticketY == 0 {
+			return -1
+		}
+		ticketY--
 	}
 
-	ticketIdx := offset + (ticketY / ticketHeight)
-	if ticketIdx >= len(tickets) {
-		return -1
+	headerColor := m.columnColor(m.columns[layout.index].Status)
+	ticketWidth := layout.renderWidth - 4
+
+	for i := layout.ticketOffset; i < endIdx; i++ {
+		height := lipgloss.Height(m.renderTicket(tickets[i], false, false, ticketWidth, headerColor))
+		if ticketY < height {
+			return i
+		}
+		ticketY -= height
 	}
 
-	return ticketIdx
+	return -1
 }
 
 func (m *Model) dropTicket() (tea.Model, tea.Cmd) {
@@ -894,28 +963,11 @@ func (m *Model) dropTicket() (tea.Model, tea.Cmd) {
 	ticket := tickets[m.dragSourceTicket]
 	targetStatus := m.columns[m.dragTargetColumn].Status
 
-	if targetStatus == board.StatusInProgress && ticket.WorktreePath == "" {
-		if ticket.UseWorktree {
-			if err := m.setupWorktree(ticket); err != nil {
-				m.notify("Worktree failed: " + err.Error())
-				m.dragging = false
-				return m, nil
-			}
-		} else {
-			if err := m.setupMainRepoBranch(ticket); err != nil {
-				m.notify("Branch setup failed: " + err.Error())
-				m.dragging = false
-				return m, nil
-			}
-		}
+	if err := m.moveTicketToStatus(ticket, targetStatus); err != nil {
+		m.notify("Move failed: " + err.Error())
+		m.dragging = false
+		return m, nil
 	}
-
-	m.globalStore.Move(ticket.ID, targetStatus)
-	m.refreshColumnTickets()
-	m.saveTicket(ticket)
-
-	m.activeColumn = m.dragTargetColumn
-	m.activeTicket = 0
 	m.ensureColumnVisible()
 	m.ensureTicketVisible()
 
@@ -2332,24 +2384,10 @@ func (m *Model) quickMoveTicket() (tea.Model, tea.Cmd) {
 		return m, nil
 	}
 
-	if nextStatus == board.StatusInProgress && ticket.WorktreePath == "" {
-		if ticket.UseWorktree {
-			if err := m.setupWorktree(ticket); err != nil {
-				m.notify("Worktree failed: " + err.Error())
-				return m, nil
-			}
-		} else {
-			if err := m.setupMainRepoBranch(ticket); err != nil {
-				m.notify("Branch setup failed: " + err.Error())
-				return m, nil
-			}
-		}
+	if err := m.moveTicketToStatus(ticket, nextStatus); err != nil {
+		m.notify("Move failed: " + err.Error())
+		return m, nil
 	}
-
-	m.globalStore.Move(ticket.ID, nextStatus)
-	m.refreshColumnTickets()
-	m.selectTicketByID(ticket.ID)
-	m.saveTicket(ticket)
 	m.notify("Moved to " + string(nextStatus))
 
 	return m, nil
@@ -2366,13 +2404,27 @@ func (m *Model) quickMoveTicketBackward() (tea.Model, tea.Cmd) {
 		return m, nil
 	}
 
-	m.globalStore.Move(ticket.ID, prevStatus)
-	m.refreshColumnTickets()
-	m.selectTicketByID(ticket.ID)
-	m.saveTicket(ticket)
+	if err := m.moveTicketToStatus(ticket, prevStatus); err != nil {
+		m.notify("Move failed: " + err.Error())
+		return m, nil
+	}
 	m.notify("Moved to " + string(prevStatus))
 
 	return m, nil
+}
+
+func (m *Model) moveTicketToStatus(ticket *board.Ticket, status board.TicketStatus) error {
+	if ticket.Status == status {
+		return nil
+	}
+
+	if err := m.globalStore.Move(ticket.ID, status); err != nil {
+		return err
+	}
+
+	m.refreshColumnTickets()
+	m.selectTicketByID(ticket.ID)
+	return m.globalStore.Save(ticket)
 }
 
 func (m *Model) setupWorktree(ticket *board.Ticket) error {
@@ -2758,6 +2810,15 @@ func (m *Model) refreshColumnTickets() {
 			}
 			filtered = append(filtered, t)
 		}
+		sort.SliceStable(filtered, func(i, j int) bool {
+			if filtered[i].Priority != filtered[j].Priority {
+				return filtered[i].Priority < filtered[j].Priority
+			}
+			if !filtered[i].CreatedAt.Equal(filtered[j].CreatedAt) {
+				return filtered[i].CreatedAt.Before(filtered[j].CreatedAt)
+			}
+			return filtered[i].ID < filtered[j].ID
+		})
 		m.columnTickets[i] = filtered
 	}
 

@@ -670,6 +670,7 @@ func (m *Model) contextualHints(hintStyle lipgloss.Style, sep string) string {
 		return hintStyle.Render("h/l") + m.dimStyle().Render(" columns") + sep +
 			hintStyle.Render("n") + m.dimStyle().Render(" new") + sep +
 			hintStyle.Render("Space") + m.dimStyle().Render(" move") + sep +
+			hintStyle.Render("drag") + m.dimStyle().Render(" move card") + sep +
 			hintStyle.Render("/") + m.dimStyle().Render(" search") + sep +
 			hintStyle.Render("?") + m.dimStyle().Render(" help")
 
@@ -721,6 +722,11 @@ func (m *Model) renderHelp() string {
 		sep + "\n" +
 		"  " + keyStyle.Render("/") + descStyle.Render("     Search/filter         ") + keyStyle.Render("O") + descStyle.Render("       Settings") + "\n" +
 		"  " + keyStyle.Render("?") + descStyle.Render("     Toggle help           ") + keyStyle.Render("q") + descStyle.Render("       Quit") + "\n\n" +
+		sep + "\n" +
+		sectionStyle.Render("  🖱 Mouse") + "\n" +
+		sep + "\n" +
+		"  " + keyStyle.Render("drag") + descStyle.Render("  Move cards between columns") + "\n" +
+		"  " + keyStyle.Render("double-click") + descStyle.Render("  Edit selected card") + "\n\n" +
 		sep + "\n" +
 		"  " + lipgloss.NewStyle().Foreground(m.colors.warning).Render("💡") + m.dimStyle().Render(" Tip: Hold Shift to select text in agent view") + "\n\n" +
 		"  " + m.dimStyle().Render("Press any key to close")
