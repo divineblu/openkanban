@@ -6,9 +6,9 @@ import (
 	"os"
 	"testing"
 
-	"github.com/techdufus/openkanban/internal/board"
-	"github.com/techdufus/openkanban/internal/project"
-	"github.com/techdufus/openkanban/internal/testutil"
+	"github.com/divineblu/openkanban/internal/board"
+	"github.com/divineblu/openkanban/internal/project"
+	"github.com/divineblu/openkanban/internal/testutil"
 )
 
 func TestIntegration_ProjectCreation(t *testing.T) {

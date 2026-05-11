@@ -16,9 +16,9 @@ builds:
       - arm64
     ldflags:
       - -s -w
-      - -X github.com/techdufus/openkanban/cmd.Version={{.Version}}
-      - -X github.com/techdufus/openkanban/cmd.Commit={{.ShortCommit}}
-      - -X github.com/techdufus/openkanban/cmd.Date={{.Date}}
+      - -X github.com/divineblu/openkanban/cmd.Version={{.Version}}
+      - -X github.com/divineblu/openkanban/cmd.Commit={{.ShortCommit}}
+      - -X github.com/divineblu/openkanban/cmd.Date={{.Date}}
 
 archives:
   - formats: [tar.gz]
@@ -62,7 +62,7 @@ changelog:
 
 release:
   github:
-    owner: TechDufus
+    owner: divineblu
     name: openkanban
   draft: false
   prerelease: auto
@@ -71,26 +71,26 @@ release:
 
     ```bash
     # Homebrew
-    brew install TechDufus/tap/openkanban
+    brew install divineblu/tap/openkanban
 
     # Go
-    go install github.com/techdufus/openkanban@{{ .Tag }}
+    go install github.com/divineblu/openkanban@{{ .Tag }}
     ```
 
   footer: |
     ---
-    **Full Changelog**: https://github.com/TechDufus/openkanban/compare/{{ .PreviousTag }}...{{ .Tag }}
+    **Full Changelog**: https://github.com/divineblu/openkanban/compare/{{ .PreviousTag }}...{{ .Tag }}
 
 homebrew_casks:
   - repository:
-      owner: TechDufus
+      owner: divineblu
       name: homebrew-tap
       token: "{{ .Env.HOMEBREW_TAP_GITHUB_TOKEN }}"
     directory: Casks
-    homepage: https://github.com/TechDufus/openkanban
+    homepage: https://github.com/divineblu/openkanban
     description: TUI kanban board for orchestrating AI coding agents
     url:
-      verified: github.com/TechDufus/openkanban
+      verified: github.com/divineblu/openkanban
     binaries:
       - openkanban
     hooks:

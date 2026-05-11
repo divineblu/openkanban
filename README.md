@@ -7,17 +7,17 @@
 <h4 align="center">A TUI kanban board for orchestrating AI coding agents.</h4>
 
 <p align="center">
-  <a href="https://github.com/TechDufus/openkanban/releases/latest">
-    <img src="https://img.shields.io/github/v/release/TechDufus/openkanban?style=flat-square&color=blue" alt="Release">
+  <a href="https://github.com/divineblu/openkanban/releases/latest">
+    <img src="https://img.shields.io/github/v/release/divineblu/openkanban?style=flat-square&color=blue" alt="Release">
   </a>
-  <a href="https://github.com/TechDufus/openkanban/blob/main/LICENSE">
-    <img src="https://img.shields.io/github/license/TechDufus/openkanban?style=flat-square&color=green" alt="License">
+  <a href="https://github.com/divineblu/openkanban/blob/main/LICENSE">
+    <img src="https://img.shields.io/github/license/divineblu/openkanban?style=flat-square&color=green" alt="License">
   </a>
-  <a href="https://github.com/TechDufus/openkanban">
-    <img src="https://img.shields.io/github/go-mod/go-version/TechDufus/openkanban?style=flat-square" alt="Go Version">
+  <a href="https://github.com/divineblu/openkanban">
+    <img src="https://img.shields.io/github/go-mod/go-version/divineblu/openkanban?style=flat-square" alt="Go Version">
   </a>
-  <a href="https://github.com/TechDufus/openkanban/actions">
-    <img src="https://img.shields.io/github/actions/workflow/status/TechDufus/openkanban/release.yaml?style=flat-square&label=build" alt="Build Status">
+  <a href="https://github.com/divineblu/openkanban/actions">
+    <img src="https://img.shields.io/github/actions/workflow/status/divineblu/openkanban/release.yaml?style=flat-square&label=build" alt="Build Status">
   </a>
 </p>
 
@@ -45,7 +45,7 @@ OpenKanban gives you a single view of all your work. Each ticket gets its own gi
 ### Homebrew (macOS/Linux)
 
 ```bash
-brew install TechDufus/tap/openkanban
+brew install divineblu/tap/openkanban
 ```
 
 To update:
@@ -57,7 +57,7 @@ brew upgrade openkanban
 ### Go
 
 ```bash
-go install github.com/techdufus/openkanban@latest
+go install github.com/divineblu/openkanban@latest
 ```
 
 ## Quick Start
@@ -89,3 +89,7 @@ See [Configuration Guide](./docs/CONFIGURATION.md) for details.
 ## License
 
 [AGPL-3.0](LICENSE)
+
+This repository is based on [TechDufus/openkanban](https://github.com/TechDufus/openkanban).
+It was modified in May 2026 to use the `github.com/divineblu/openkanban`
+repository and Go module path.

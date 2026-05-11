@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/techdufus/openkanban/cmd"
+	"github.com/divineblu/openkanban/cmd"
 )
 
 func main() {

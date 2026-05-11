@@ -1,0 +1,6 @@
+This repository is based on TechDufus/openkanban.
+
+Modified in May 2026 to update repository ownership, module paths, release
+metadata, and installation references for github.com/divineblu/openkanban.
+
+The project remains licensed under AGPL-3.0. See LICENSE.

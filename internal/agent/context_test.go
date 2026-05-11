@@ -5,7 +5,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/techdufus/openkanban/internal/board"
+	"github.com/divineblu/openkanban/internal/board"
 )
 
 func TestBuildContextPrompt(t *testing.T) {

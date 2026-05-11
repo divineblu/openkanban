@@ -5,7 +5,7 @@ import (
 	"strings"
 	"text/template"
 
-	"github.com/techdufus/openkanban/internal/board"
+	"github.com/divineblu/openkanban/internal/board"
 )
 
 type ContextData struct {

@@ -10,7 +10,7 @@ import (
 )
 
 const (
-	githubRepo = "TechDufus/openkanban"
+	githubRepo = "divineblu/openkanban"
 	apiTimeout = 5 * time.Second
 )
 
@@ -44,7 +44,7 @@ func (r CheckResult) UpdateHint() string {
 	case InstallHomebrew:
 		return "brew upgrade openkanban"
 	case InstallGo:
-		return "go install github.com/techdufus/openkanban@latest"
+		return "go install github.com/divineblu/openkanban@latest"
 	default:
 		return r.ReleaseURL
 	}

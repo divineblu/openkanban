@@ -1,4 +1,4 @@
-module github.com/techdufus/openkanban
+module github.com/divineblu/openkanban
 
 go 1.25
 

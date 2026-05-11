@@ -6,9 +6,9 @@ import (
 	"os"
 	"path/filepath"
 
+	"github.com/divineblu/openkanban/internal/app"
+	"github.com/divineblu/openkanban/internal/config"
 	"github.com/spf13/cobra"
-	"github.com/techdufus/openkanban/internal/app"
-	"github.com/techdufus/openkanban/internal/config"
 )
 
 var (

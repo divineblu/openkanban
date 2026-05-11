@@ -8,8 +8,8 @@ import (
 	"sort"
 	"time"
 
-	"github.com/techdufus/openkanban/internal/board"
-	"github.com/techdufus/openkanban/internal/config"
+	"github.com/divineblu/openkanban/internal/board"
+	"github.com/divineblu/openkanban/internal/config"
 )
 
 type opencodeSession struct {

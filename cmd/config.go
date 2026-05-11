@@ -4,8 +4,8 @@ import (
 	"fmt"
 	"os"
 
+	"github.com/divineblu/openkanban/internal/config"
 	"github.com/spf13/cobra"
-	"github.com/techdufus/openkanban/internal/config"
 )
 
 var configCmd = &cobra.Command{

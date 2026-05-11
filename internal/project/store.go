@@ -7,7 +7,7 @@ import (
 	"path/filepath"
 	"sort"
 
-	"github.com/techdufus/openkanban/internal/config"
+	"github.com/divineblu/openkanban/internal/config"
 )
 
 var (

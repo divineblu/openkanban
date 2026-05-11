@@ -7,7 +7,7 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/techdufus/openkanban/internal/project"
+	"github.com/divineblu/openkanban/internal/project"
 )
 
 type WorktreeManager struct {

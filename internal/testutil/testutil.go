@@ -6,9 +6,9 @@ import (
 	"path/filepath"
 	"testing"
 
-	"github.com/techdufus/openkanban/internal/board"
-	"github.com/techdufus/openkanban/internal/config"
-	"github.com/techdufus/openkanban/internal/project"
+	"github.com/divineblu/openkanban/internal/board"
+	"github.com/divineblu/openkanban/internal/config"
+	"github.com/divineblu/openkanban/internal/project"
 )
 
 type TestEnv struct {

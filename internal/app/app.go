@@ -8,12 +8,12 @@ import (
 	"syscall"
 
 	tea "github.com/charmbracelet/bubbletea"
-	"github.com/techdufus/openkanban/internal/agent"
-	"github.com/techdufus/openkanban/internal/config"
-	"github.com/techdufus/openkanban/internal/git"
-	"github.com/techdufus/openkanban/internal/project"
-	"github.com/techdufus/openkanban/internal/ui"
-	"github.com/techdufus/openkanban/internal/update"
+	"github.com/divineblu/openkanban/internal/agent"
+	"github.com/divineblu/openkanban/internal/config"
+	"github.com/divineblu/openkanban/internal/git"
+	"github.com/divineblu/openkanban/internal/project"
+	"github.com/divineblu/openkanban/internal/ui"
+	"github.com/divineblu/openkanban/internal/update"
 )
 
 func Run(cfg *config.Config, filterPath, version string) error {

@@ -5,9 +5,9 @@ import (
 	"os"
 	"path/filepath"
 
+	"github.com/divineblu/openkanban/internal/board"
+	"github.com/divineblu/openkanban/internal/config"
 	"github.com/google/uuid"
-	"github.com/techdufus/openkanban/internal/board"
-	"github.com/techdufus/openkanban/internal/config"
 )
 
 type SavedFilter struct {

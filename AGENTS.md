@@ -116,7 +116,7 @@ package mypackage_test
 
 import (
     "testing"
-    "github.com/techdufus/openkanban/internal/testutil"
+    "github.com/divineblu/openkanban/internal/testutil"
 )
 
 func TestSomething_Integration(t *testing.T) {

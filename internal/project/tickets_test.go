@@ -5,7 +5,7 @@ import (
 	"path/filepath"
 	"testing"
 
-	"github.com/techdufus/openkanban/internal/board"
+	"github.com/divineblu/openkanban/internal/board"
 )
 
 func TestNewTicketStore(t *testing.T) {

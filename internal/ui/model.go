@@ -13,13 +13,13 @@ import (
 	"github.com/charmbracelet/bubbles/textinput"
 	tea "github.com/charmbracelet/bubbletea"
 
-	"github.com/techdufus/openkanban/internal/agent"
-	"github.com/techdufus/openkanban/internal/board"
-	"github.com/techdufus/openkanban/internal/config"
-	"github.com/techdufus/openkanban/internal/git"
-	"github.com/techdufus/openkanban/internal/project"
-	"github.com/techdufus/openkanban/internal/terminal"
-	"github.com/techdufus/openkanban/internal/update"
+	"github.com/divineblu/openkanban/internal/agent"
+	"github.com/divineblu/openkanban/internal/board"
+	"github.com/divineblu/openkanban/internal/config"
+	"github.com/divineblu/openkanban/internal/git"
+	"github.com/divineblu/openkanban/internal/project"
+	"github.com/divineblu/openkanban/internal/terminal"
+	"github.com/divineblu/openkanban/internal/update"
 )
 
 const agentPortBase = 4097
