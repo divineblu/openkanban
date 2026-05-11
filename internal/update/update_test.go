@@ -9,9 +9,16 @@ func TestCheckResultUpdateHint(t *testing.T) {
 		want   string
 	}{
 		{
-			name: "homebrew cask",
+			name: "homebrew formula",
 			result: CheckResult{
 				InstallMethod: InstallHomebrew,
+			},
+			want: "brew upgrade openkanban",
+		},
+		{
+			name: "homebrew cask",
+			result: CheckResult{
+				InstallMethod: InstallHomebrewCask,
 			},
 			want: "brew upgrade --cask openkanban",
 		},

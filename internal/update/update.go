@@ -19,6 +19,7 @@ type InstallMethod int
 const (
 	InstallUnknown InstallMethod = iota
 	InstallHomebrew
+	InstallHomebrewCask
 	InstallGo
 )
 
@@ -42,6 +43,8 @@ type CheckResult struct {
 func (r CheckResult) UpdateHint() string {
 	switch r.InstallMethod {
 	case InstallHomebrew:
+		return "brew upgrade openkanban"
+	case InstallHomebrewCask:
 		return "brew upgrade --cask openkanban"
 	case InstallGo:
 		return "go install github.com/divineblu/openkanban@latest"
@@ -57,7 +60,11 @@ func DetectInstallMethod() InstallMethod {
 		return InstallUnknown
 	}
 
-	if strings.Contains(exe, "Cellar") || strings.Contains(exe, "Caskroom") || strings.Contains(exe, "linuxbrew") {
+	if strings.Contains(exe, "Caskroom") {
+		return InstallHomebrewCask
+	}
+
+	if strings.Contains(exe, "Cellar") || strings.Contains(exe, "linuxbrew") {
 		return InstallHomebrew
 	}
 

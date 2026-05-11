@@ -71,7 +71,7 @@ release:
 
     ```bash
     # Homebrew
-    brew install --cask divineblu/tap/openkanban
+    brew install divineblu/tap/openkanban
 
     # Go
     go install github.com/divineblu/openkanban@{{ .Tag }}
@@ -81,21 +81,14 @@ release:
     ---
     **Full Changelog**: https://github.com/divineblu/openkanban/compare/{{ .PreviousTag }}...{{ .Tag }}
 
-homebrew_casks:
+brews:
   - repository:
       owner: divineblu
       name: homebrew-tap
       token: "{{ .Env.HOMEBREW_TAP_GITHUB_TOKEN }}"
-    directory: Casks
+    directory: Formula
     homepage: https://github.com/divineblu/openkanban
     description: TUI kanban board for orchestrating AI coding agents
-    url:
-      verified: github.com/divineblu/openkanban
-    binaries:
-      - openkanban
-    hooks:
-      post:
-        install: |
-          if OS.mac?
-            system_command "/usr/bin/xattr", args: ["-dr", "com.apple.quarantine", "#{staged_path}/openkanban"]
-          end
+    license: AGPL-3.0-only
+    test: |
+      system "#{bin}/openkanban", "version"

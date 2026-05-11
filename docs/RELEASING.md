@@ -1,7 +1,7 @@
 # Releasing
 
 OpenKanban releases are built with GoReleaser. GitHub releases publish binary
-archives, and GoReleaser writes a Homebrew cask to `divineblu/homebrew-tap`.
+archives, and GoReleaser writes a Homebrew formula to `divineblu/homebrew-tap`.
 
 ## One-Time Homebrew Setup
 
@@ -37,7 +37,7 @@ git push origin v0.1.0
 ```
 
 The release workflow uploads the GitHub release artifacts and updates
-`divineblu/homebrew-tap/Casks/openkanban.rb`.
+`divineblu/homebrew-tap/Formula/openkanban.rb`.
 
 ## Test Homebrew
 
@@ -46,18 +46,18 @@ After the release workflow completes:
 ```bash
 brew uninstall --cask openkanban || true
 brew untap divineblu/tap || true
-brew install --cask divineblu/tap/openkanban
+brew install divineblu/tap/openkanban
 openkanban version
 ```
 
-Use `brew upgrade --cask openkanban` for updates.
+Use `brew upgrade openkanban` for updates.
 
 ## Homebrew Core
 
 This tap supports:
 
 ```bash
-brew install --cask divineblu/tap/openkanban
+brew install divineblu/tap/openkanban
 ```
 
 Plain `brew install openkanban` requires acceptance into `Homebrew/homebrew-core`
